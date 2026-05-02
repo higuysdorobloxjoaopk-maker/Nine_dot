@@ -1,3 +1,11 @@
+--[[
+R6 script
+]]
+loadstring(game:HttpGet("https://pastebin.com/raw/jHGVauVX", true))()
+task.wait(1)
+--[[
+VEREUS script
+]]
 -----------//VEREUS\\-----------
 --[[Movelist
 Q = The reverse penance stare,
