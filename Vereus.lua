@@ -2,7 +2,12 @@
 R6 script
 ]]
 loadstring(game:HttpGet("https://pastebin.com/raw/jHGVauVX", true))()
-task.wait(1)
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "wait",
+    Text = "Wait 5 seconds...",
+    Duration = 5
+})
+task.wait(5)
 --[[
 VEREUS script
 ]]
