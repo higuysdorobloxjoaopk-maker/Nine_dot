@@ -1,0 +1,1179 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
+
+local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+local editActive = false
+
+local function removeDefaultTouchGui()
+    local touchGui = playerGui:FindFirstChild("TouchGui")
+    if touchGui then
+        touchGui:Destroy()
+    end
+end
+
+removeDefaultTouchGui()
+
+playerGui.ChildAdded:Connect(function(child)
+    if child.Name == "TouchGui" then
+        task.defer(function()
+            child:Destroy()
+        end)
+    end
+end)
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TouchGuiPCKeyBoard"
+screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 999999999
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+screenGui.IgnoreGuiInset = true
+
+-- Tenta colocar no CoreGui (ZIndex muito alto) para executors
+local successCoreGui, coreGui = pcall(function() return game:GetService("CoreGui") end)
+if successCoreGui and coreGui then
+    screenGui.Parent = coreGui
+else
+    screenGui.Parent = playerGui
+end
+
+-- Frame limite para o arrasto (Impede que as teclas saiam da tela)
+local dragBoundary = Instance.new("Frame")
+dragBoundary.Name = "DragBoundary"
+dragBoundary.Size = UDim2.new(1, 0, 1, 0)
+dragBoundary.BackgroundTransparency = 1
+dragBoundary.ZIndex = 0
+dragBoundary.Parent = screenGui
+
+local wasdContainer = Instance.new("Frame")
+wasdContainer.Name = "WASD"
+wasdContainer.Size = UDim2.new(0, 204, 0, 136)
+wasdContainer.Position = UDim2.new(0, 6, 0, 196)
+wasdContainer.BackgroundTransparency = 1
+wasdContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+wasdContainer.BorderSizePixel = 0
+wasdContainer.Parent = screenGui
+
+local wasdAspectRatio = Instance.new("UIAspectRatioConstraint")
+wasdAspectRatio.AspectRatio = 1.5
+wasdAspectRatio.Parent = wasdContainer
+
+local backgroundFrame = Instance.new("Frame")
+backgroundFrame.Name = "BgFrame"
+backgroundFrame.Size = UDim2.new(0, 150, 0, 90)
+backgroundFrame.Position = UDim2.new(0, 18, 0, 16)
+backgroundFrame.BackgroundTransparency = 1
+backgroundFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+backgroundFrame.BorderSizePixel = 0
+backgroundFrame.Parent = wasdContainer
+
+local wImage = Instance.new("ImageLabel")
+wImage.Size = UDim2.new(0, 45, 0, 45)
+wImage.Position = UDim2.new(0, 48, 0, 0)
+wImage.BackgroundTransparency = 1
+wImage.Image = "rbxassetid://123775806555660"
+wImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+wImage.BorderSizePixel = 0
+wImage.Parent = backgroundFrame
+
+local sImage = Instance.new("ImageLabel")
+sImage.Size = UDim2.new(0, 45, 0, 45)
+sImage.Position = UDim2.new(0, 48, 0, 44)
+sImage.BackgroundTransparency = 1
+sImage.Image = "rbxassetid://123775806555660"
+sImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sImage.BorderSizePixel = 0
+sImage.Parent = backgroundFrame
+
+local dImage = Instance.new("ImageLabel")
+dImage.Size = UDim2.new(0, 45, 0, 45)
+dImage.Position = UDim2.new(0, 92, 0, 44)
+dImage.BackgroundTransparency = 1
+dImage.Image = "rbxassetid://123775806555660"
+dImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+dImage.BorderSizePixel = 0
+dImage.Parent = backgroundFrame
+
+local aImage = Instance.new("ImageLabel")
+aImage.Size = UDim2.new(0, 45, 0, 45)
+aImage.Position = UDim2.new(0, 4, 0, 44)
+aImage.BackgroundTransparency = 1
+aImage.Image = "rbxassetid://123775806555660"
+aImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+aImage.BorderSizePixel = 0
+aImage.Parent = backgroundFrame
+
+local frontFrame = Instance.new("Frame")
+frontFrame.Name = "FrontFrame"
+frontFrame.Size = UDim2.new(0, 126, 0, 86)
+frontFrame.Position = UDim2.new(0, 26, 0, 14)
+frontFrame.BackgroundTransparency = 1
+frontFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+frontFrame.BorderSizePixel = 0
+frontFrame.Parent = wasdContainer
+
+local wButton = Instance.new("TextButton")
+wButton.Name = "W"
+wButton.Text = "W"
+wButton.Size = UDim2.new(0, 42, 0, 40)
+wButton.Position = UDim2.new(0, 42, 0, 4)
+wButton.BackgroundTransparency = 1
+wButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+wButton.BorderSizePixel = 0
+wButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+wButton.TextSize = 13
+wButton.Parent = frontFrame
+
+local sButton = Instance.new("TextButton")
+sButton.Name = "S"
+sButton.Text = "S"
+sButton.Size = UDim2.new(0, 42, 0, 40)
+sButton.Position = UDim2.new(0, 42, 0, 48)
+sButton.BackgroundTransparency = 1
+sButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sButton.BorderSizePixel = 0
+sButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+sButton.TextSize = 15
+sButton.Parent = frontFrame
+
+local aButton = Instance.new("TextButton")
+aButton.Name = "A"
+aButton.Text = "A"
+aButton.Size = UDim2.new(0, 40, 0, 40)
+aButton.Position = UDim2.new(0, 0, 0, 50)
+aButton.BackgroundTransparency = 1
+aButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+aButton.BorderSizePixel = 0
+aButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+aButton.TextSize = 15
+aButton.Parent = frontFrame
+
+local dButton = Instance.new("TextButton")
+dButton.Name = "D"
+dButton.Text = "D"
+dButton.Size = UDim2.new(0, 42, 0, 40)
+dButton.Position = UDim2.new(0, 86, 0, 48)
+dButton.BackgroundTransparency = 1
+dButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+dButton.BorderSizePixel = 0
+dButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+dButton.TextSize = 15
+dButton.Parent = frontFrame
+
+local extraKeysContainer = Instance.new("Frame")
+extraKeysContainer.Name = "ExtraKeys"
+extraKeysContainer.Size = UDim2.new(0, 138, 0, 45)
+extraKeysContainer.Position = UDim2.new(0, 628, 0, 195)
+extraKeysContainer.BackgroundTransparency = 1
+extraKeysContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+extraKeysContainer.BorderSizePixel = 0
+extraKeysContainer.Parent = screenGui
+
+local eImage = Instance.new("ImageLabel")
+eImage.Size = UDim2.new(0, 45, 0, 45)
+eImage.Position = UDim2.new(0, 0, 0, 0)
+eImage.BackgroundTransparency = 1
+eImage.Image = "rbxassetid://123775806555660"
+eImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+eImage.BorderSizePixel = 0
+eImage.Parent = extraKeysContainer
+
+local eButton = Instance.new("TextButton")
+eButton.Name = "E"
+eButton.Text = "E"
+eButton.Size = UDim2.new(1, 0, 1, 0)
+eButton.BackgroundTransparency = 1
+eButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+eButton.BorderSizePixel = 0
+eButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+eButton.TextSize = 17
+eButton.Parent = eImage
+
+local shiftImage = Instance.new("ImageLabel")
+shiftImage.Size = UDim2.new(0, 83, 0, 45)
+shiftImage.Position = UDim2.new(0, 55, 0, 0)
+shiftImage.BackgroundTransparency = 1
+shiftImage.Image = "rbxassetid://123775806555660"
+shiftImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+shiftImage.BorderSizePixel = 0
+shiftImage.Parent = extraKeysContainer
+
+local shiftButton = Instance.new("TextButton")
+shiftButton.Name = "Shift"
+shiftButton.Text = "Shift"
+shiftButton.Size = UDim2.new(1, 0, 1, 0)
+shiftButton.BackgroundTransparency = 1
+shiftButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+shiftButton.BorderSizePixel = 0
+shiftButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+shiftButton.TextSize = 17
+shiftButton.Parent = shiftImage
+
+local spaceContainer = Instance.new("Frame")
+spaceContainer.Name = "Space"
+spaceContainer.Size = UDim2.new(0, 214, 0, 116)
+spaceContainer.Position = UDim2.new(0, 588, 0, 222)
+spaceContainer.BackgroundTransparency = 1
+spaceContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+spaceContainer.BorderSizePixel = 0
+spaceContainer.Parent = screenGui
+
+local spaceAspectRatio = Instance.new("UIAspectRatioConstraint")
+spaceAspectRatio.AspectRatio = 1.84483
+spaceAspectRatio.Parent = spaceContainer
+
+local spaceImage = Instance.new("ImageLabel")
+spaceImage.Size = UDim2.new(0, 138, 0, 50)
+spaceImage.Position = UDim2.new(0, 40, 0, 30)
+spaceImage.BackgroundTransparency = 1
+spaceImage.Image = "rbxassetid://123775806555660"
+spaceImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+spaceImage.BorderSizePixel = 0
+spaceImage.Parent = spaceContainer
+
+local spaceButton = Instance.new("TextButton")
+spaceButton.Name = "Space"
+spaceButton.Text = "Space"
+spaceButton.Size = UDim2.new(0, 122, 0, 46)
+spaceButton.Position = UDim2.new(0, 8, 0, 2)
+spaceButton.BackgroundTransparency = 1
+spaceButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+spaceButton.BorderSizePixel = 0
+spaceButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+spaceButton.TextSize = 17
+spaceButton.Parent = spaceImage
+
+local buttonMapping = {
+    [Enum.KeyCode.W] = wButton,
+    [Enum.KeyCode.A] = aButton,
+    [Enum.KeyCode.S] = sButton,
+    [Enum.KeyCode.D] = dButton,
+    [Enum.KeyCode.Space] = spaceButton,
+    [Enum.KeyCode.E] = eButton,
+    [Enum.KeyCode.LeftShift] = shiftButton
+}
+
+local activeTouches = {}
+local simulatedKeys = {}
+
+local function resetSimulatedKeys()
+    for kc, _ in pairs(simulatedKeys) do
+        VirtualInputManager:SendKeyEvent(false, kc, false, game)
+        if buttonMapping[kc] then
+            buttonMapping[kc].BackgroundTransparency = 1
+        end
+    end
+    table.clear(simulatedKeys)
+    table.clear(activeTouches)
+end
+
+local function updateButtonVisuals(keyCode, isPressed)
+    if editActive then return end
+    local button = buttonMapping[keyCode]
+    if button then
+        button.BackgroundTransparency = isPressed and 0.5 or 1
+    end
+end
+
+local function simulateKeyPress(keyCode, isPressed)
+    if editActive then return end
+    VirtualInputManager:SendKeyEvent(isPressed, keyCode, false, game)
+end
+
+local function checkTouches()
+    if editActive then return end
+    local touchesOnButtons = {}
+
+    for touch in pairs(activeTouches) do  
+        local touchPosition = touch.Position  
+        for keyCode, button in pairs(buttonMapping) do  
+            local absolutePosition = button.AbsolutePosition  
+            local absoluteSize = button.AbsoluteSize  
+              
+            local isInsideX = touchPosition.X >= absolutePosition.X and touchPosition.X <= absolutePosition.X + absoluteSize.X  
+            local isInsideY = touchPosition.Y >= absolutePosition.Y and touchPosition.Y <= absolutePosition.Y + absoluteSize.Y  
+              
+            if isInsideX and isInsideY then  
+                touchesOnButtons[keyCode] = true  
+            end  
+        end  
+    end  
+      
+    for keyCode, button in pairs(buttonMapping) do  
+        local isBeingTouched = touchesOnButtons[keyCode]  
+        local wasSimulated = simulatedKeys[keyCode]  
+          
+        if isBeingTouched and not wasSimulated then  
+            simulateKeyPress(keyCode, true)  
+            updateButtonVisuals(keyCode, true)  
+            simulatedKeys[keyCode] = true  
+        elseif not isBeingTouched and wasSimulated then  
+            simulateKeyPress(keyCode, false)  
+            updateButtonVisuals(keyCode, false)  
+            simulatedKeys[keyCode] = nil  
+        end  
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if editActive then return end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        activeTouches[input] = true
+        checkTouches()
+    elseif input.UserInputType == Enum.UserInputType.Keyboard and not gameProcessed then
+        updateButtonVisuals(input.KeyCode, true)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if editActive then return end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        checkTouches()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if editActive then return end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        activeTouches[input] = nil
+        checkTouches()
+    elseif input.UserInputType == Enum.UserInputType.Keyboard then
+        updateButtonVisuals(input.KeyCode, false)
+    end
+end)
+
+for keyCode, button in pairs(buttonMapping) do
+    button.MouseButton1Down:Connect(function()
+        if editActive then return end
+        simulateKeyPress(keyCode, true)
+        updateButtonVisuals(keyCode, true)
+        simulatedKeys[keyCode] = true
+    end)
+
+    button.MouseButton1Up:Connect(function()  
+        if editActive then return end
+        simulateKeyPress(keyCode, false)  
+        updateButtonVisuals(keyCode, false)  
+        simulatedKeys[keyCode] = nil  
+    end)  
+      
+    button.MouseLeave:Connect(function()  
+        if editActive then return end
+        if simulatedKeys[keyCode] then  
+            simulateKeyPress(keyCode, false)  
+            updateButtonVisuals(keyCode, false)  
+            simulatedKeys[keyCode] = nil  
+        end  
+    end)  
+      
+    button.MouseEnter:Connect(function()  
+        if editActive then return end
+        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then  
+            simulateKeyPress(keyCode, true)  
+            updateButtonVisuals(keyCode, true)  
+            simulatedKeys[keyCode] = true  
+        end  
+    end)
+end
+
+
+-----------------------------------------------------------------------------------------
+-- SISTEMA DE EDIÇÃO INTEGRADO 
+-----------------------------------------------------------------------------------------
+local draggables = {}
+local activeRainbowConnection = nil
+local currentModSettings = {
+    BgMode = "White",
+    TextHex = "#000000",
+    Rainbow = false
+}
+
+-- O Botão fica encostado no topo e 75% invisível
+local UI_EditBtn = Instance.new("TextButton", screenGui)
+UI_EditBtn.Name = "editButton"
+UI_EditBtn.Size = UDim2.new(0, 68, 0, 24)
+UI_EditBtn.Position = UDim2.new(0.5, -34, 0, 0)
+UI_EditBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_EditBtn.BackgroundTransparency = 0.97
+UI_EditBtn.TextTransparency = 0.97
+UI_EditBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+UI_EditBtn.TextSize = 14
+UI_EditBtn.Text = "Edit"
+UI_EditBtn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", UI_EditBtn).CornerRadius = UDim.new(0, 6)
+
+local UI_EditMenu = Instance.new("Frame", screenGui)
+UI_EditMenu.Name = "EditMenu"
+UI_EditMenu.Size = UDim2.new(0, 228, 0, 112)
+UI_EditMenu.Position = UDim2.new(0.5, -114, 0.5, -56)
+UI_EditMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_EditMenu.BackgroundTransparency = 0.5
+UI_EditMenu.Visible = false
+Instance.new("UICorner", UI_EditMenu)
+
+local UI_ModBtn = Instance.new("TextButton", UI_EditMenu)
+UI_ModBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_ModBtn.Position = UDim2.new(0, 61, 0, 8)
+UI_ModBtn.Text = "Mod"
+UI_ModBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_ModBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_ModBtn)
+
+local UI_CancelBtn = Instance.new("TextButton", UI_EditMenu)
+UI_CancelBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_CancelBtn.Position = UDim2.new(0, 61, 0, 42)
+UI_CancelBtn.Text = "Cancel"
+UI_CancelBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_CancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_CancelBtn)
+
+local UI_NewBtn = Instance.new("TextButton", UI_EditMenu)
+UI_NewBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_NewBtn.Position = UDim2.new(0, 6, 0, 78)
+UI_NewBtn.Text = "New"
+UI_NewBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_NewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_NewBtn)
+
+local UI_SaveBtn = Instance.new("TextButton", UI_EditMenu)
+UI_SaveBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_SaveBtn.Position = UDim2.new(0, 116, 0, 78)
+UI_SaveBtn.Text = "Save"
+UI_SaveBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_SaveBtn)
+
+-- NOVO MOD MENU
+local UI_ModMenu = Instance.new("Frame", screenGui)
+UI_ModMenu.Name = "ModMenu"
+UI_ModMenu.Size = UDim2.new(0, 228, 0, 146)
+UI_ModMenu.Position = UDim2.new(0.5, -114, 0.5, -73)
+UI_ModMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_ModMenu.BackgroundTransparency = 0.5
+UI_ModMenu.Visible = false
+Instance.new("UICorner", UI_ModMenu)
+
+local UI_BgBtn = Instance.new("TextButton", UI_ModMenu)
+UI_BgBtn.Size = UDim2.new(0, 216, 0, 26)
+UI_BgBtn.Position = UDim2.new(0, 6, 0, 8)
+UI_BgBtn.Text = "BG: White"
+UI_BgBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_BgBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_BgBtn)
+
+local UI_HexInput = Instance.new("TextBox", UI_ModMenu)
+UI_HexInput.Size = UDim2.new(0, 216, 0, 26)
+UI_HexInput.Position = UDim2.new(0, 6, 0, 42)
+UI_HexInput.Text = "#000000"
+UI_HexInput.PlaceholderText = "Cor do Texto Hex (#...)"
+UI_HexInput.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_HexInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_HexInput)
+
+local UI_RainbowBtn = Instance.new("TextButton", UI_ModMenu)
+UI_RainbowBtn.Size = UDim2.new(0, 216, 0, 26)
+UI_RainbowBtn.Position = UDim2.new(0, 6, 0, 76)
+UI_RainbowBtn.Text = "Rainbow Text: OFF"
+UI_RainbowBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_RainbowBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_RainbowBtn)
+
+local UI_ModCancelBtn = Instance.new("TextButton", UI_ModMenu)
+UI_ModCancelBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_ModCancelBtn.Position = UDim2.new(0, 6, 0, 110)
+UI_ModCancelBtn.Text = "Cancel"
+UI_ModCancelBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_ModCancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_ModCancelBtn)
+
+local UI_ModSaveBtn = Instance.new("TextButton", UI_ModMenu)
+UI_ModSaveBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_ModSaveBtn.Position = UDim2.new(0, 116, 0, 110)
+UI_ModSaveBtn.Text = "Save Mod"
+UI_ModSaveBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_ModSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_ModSaveBtn)
+
+local UI_CreateMenu = Instance.new("Frame", screenGui)
+UI_CreateMenu.Name = "CreateMenu"
+UI_CreateMenu.Size = UDim2.new(0, 228, 0, 142)
+UI_CreateMenu.Position = UDim2.new(0.5, -114, 0.5, -71)
+UI_CreateMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_CreateMenu.BackgroundTransparency = 0.5
+UI_CreateMenu.Visible = false
+Instance.new("UICorner", UI_CreateMenu)
+
+local KeyPreviewBg = Instance.new("ImageLabel", UI_CreateMenu)
+KeyPreviewBg.Image = "rbxassetid://123775806555660"
+KeyPreviewBg.BackgroundTransparency = 1
+KeyPreviewBg.Size = UDim2.new(0, 50, 0, 50)
+KeyPreviewBg.Position = UDim2.new(0.5, -25, 0, 12)
+
+local UI_KeyNameInput = Instance.new("TextBox", KeyPreviewBg)
+UI_KeyNameInput.Size = UDim2.new(1, 0, 1, 0)
+UI_KeyNameInput.BackgroundTransparency = 1
+UI_KeyNameInput.Text = "F"
+UI_KeyNameInput.TextSize = 17
+UI_KeyNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+UI_KeyNameInput.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+
+local UI_TypeToggleBtn = Instance.new("TextButton", UI_CreateMenu)
+UI_TypeToggleBtn.Size = UDim2.new(0, 216, 0, 26)
+UI_TypeToggleBtn.Position = UDim2.new(0, 6, 0, 72)
+UI_TypeToggleBtn.Text = "Mode: Keyboard Key"
+UI_TypeToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+UI_TypeToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_TypeToggleBtn)
+
+local UI_CreateNewBtn = Instance.new("TextButton", UI_CreateMenu)
+UI_CreateNewBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_CreateNewBtn.Position = UDim2.new(0, 6, 0, 108)
+UI_CreateNewBtn.Text = "Create"
+UI_CreateNewBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_CreateNewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_CreateNewBtn)
+
+local UI_CreateCancelBtn = Instance.new("TextButton", UI_CreateMenu)
+UI_CreateCancelBtn.Size = UDim2.new(0, 106, 0, 26)
+UI_CreateCancelBtn.Position = UDim2.new(0, 116, 0, 108)
+UI_CreateCancelBtn.Text = "Cancel"
+UI_CreateCancelBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_CreateCancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_CreateCancelBtn)
+
+-- NOVO: MENU PARA AUTOCLICK CPS
+local UI_CPSMenu = Instance.new("Frame", screenGui)
+UI_CPSMenu.Name = "CPSMenu"
+UI_CPSMenu.Size = UDim2.new(0, 160, 0, 100)
+UI_CPSMenu.Position = UDim2.new(0.5, -80, 0.5, -50)
+UI_CPSMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_CPSMenu.BackgroundTransparency = 0.5
+UI_CPSMenu.Visible = false
+Instance.new("UICorner", UI_CPSMenu)
+
+local UI_CPSInput = Instance.new("TextBox", UI_CPSMenu)
+UI_CPSInput.Size = UDim2.new(0, 140, 0, 30)
+UI_CPSInput.Position = UDim2.new(0, 10, 0, 10)
+UI_CPSInput.PlaceholderText = "Clicks por seg..."
+UI_CPSInput.Text = "10"
+UI_CPSInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+UI_CPSInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_CPSInput)
+
+local UI_CPSSaveBtn = Instance.new("TextButton", UI_CPSMenu)
+UI_CPSSaveBtn.Size = UDim2.new(0, 140, 0, 30)
+UI_CPSSaveBtn.Position = UDim2.new(0, 10, 0, 50)
+UI_CPSSaveBtn.Text = "Save CPS"
+UI_CPSSaveBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+UI_CPSSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", UI_CPSSaveBtn)
+
+local activeAutoClickData = nil
+local currentCreateMode = "Key"
+
+UI_TypeToggleBtn.MouseButton1Click:Connect(function()
+    if currentCreateMode == "Key" then
+        currentCreateMode = "Tap"
+        UI_TypeToggleBtn.Text = "Mode: Shortcut / Tap"
+    else
+        currentCreateMode = "Key"
+        UI_TypeToggleBtn.Text = "Mode: Keyboard Key"
+    end
+end)
+
+UI_CPSSaveBtn.MouseButton1Click:Connect(function()
+    if activeAutoClickData and activeAutoClickData.data then
+        local cpsVal = tonumber(UI_CPSInput.Text)
+        if cpsVal and cpsVal > 0 then
+            activeAutoClickData.data.CPS = cpsVal
+        end
+    end
+    UI_CPSMenu.Visible = false
+end)
+
+local function OpenCPSMenu(elementData)
+    activeAutoClickData = elementData
+    UI_CPSInput.Text = tostring(elementData.data.CPS or 10)
+    UI_CPSMenu.Visible = true
+end
+
+local function hexToColor3(hexStr)
+    hexStr = hexStr:gsub("#", "")
+    local success, c3 = pcall(function() return Color3.fromHex(hexStr) end)
+    return success and c3 or Color3.fromRGB(0,0,0)
+end
+
+local function applyModSettings(settings)
+    local bgC3 = settings.BgMode == "Black" and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(255, 255, 255)
+    local txtC3 = hexToColor3(settings.TextHex)
+
+    -- Aplicar Background com base no ImageLabel das teclas
+    for _, obj in ipairs(screenGui:GetDescendants()) do
+        if obj:IsA("ImageLabel") and obj.Image == "rbxassetid://123775806555660" and not obj:IsDescendantOf(UI_CreateMenu) and not obj:IsDescendantOf(UI_ModMenu) then
+            -- Só não afeta as teclas de clique ativo/feedback
+            if not obj:GetAttribute("ActiveAutoClickVisual") then
+                obj.ImageColor3 = bgC3
+            end
+        end
+    end
+
+    if activeRainbowConnection then
+        activeRainbowConnection:Disconnect()
+        activeRainbowConnection = nil
+    end
+
+    if settings.Rainbow then
+        activeRainbowConnection = RunService.RenderStepped:Connect(function()
+            local hue = tick() % 3 / 3
+            local rainbowColor = Color3.fromHSV(hue, 1, 1)
+            for kc, btn in pairs(buttonMapping) do
+                if btn then btn.TextColor3 = rainbowColor end
+            end
+        end)
+    else
+        for kc, btn in pairs(buttonMapping) do
+            if btn then btn.TextColor3 = txtC3 end
+        end
+    end
+end
+
+local function cleanButtonMappings(targetFrame)
+    for kc, btn in pairs(buttonMapping) do
+        if btn:IsDescendantOf(targetFrame) then
+            buttonMapping[kc] = nil
+        end
+    end
+end
+
+-- Parser de texto para KeyCode, aceita Esc, ., ,, *, etc.
+local function parseKeyCode(str)
+    if type(str) ~= "string" or str == "" then return nil end
+    
+    local map = {
+        ["."] = "Period", [","] = "Comma", ["/"] = "Slash", ["\\"] = "BackSlash",
+        ["'"] = "Quote", [";"] = "Semicolon", ["="] = "Equals", ["-"] = "Minus",
+        ["["] = "LeftBracket", ["]"] = "RightBracket", ["`"] = "Backquote",
+        ["*"] = "Asterisk", ["+"] = "Plus", [" "] = "Space", ["_"] = "Underscore",
+        ["esc"] = "Escape", ["escape"] = "Escape", ["alt"] = "LeftAlt",
+        ["ctrl"] = "LeftControl", ["shift"] = "LeftShift", ["tab"] = "Tab",
+        ["enter"] = "Return", ["return"] = "Return", ["backspace"] = "Backspace",
+        ["del"] = "Delete", ["delete"] = "Delete", ["up"] = "Up", ["down"] = "Down",
+        ["left"] = "Left", ["right"] = "Right", ["f1"] = "F1", ["f2"] = "F2",
+        ["f3"] = "F3", ["f4"] = "F4", ["f5"] = "F5", ["f6"] = "F6", ["f7"] = "F7",
+        ["f8"] = "F8", ["f9"] = "F9", ["f10"] = "F10", ["f11"] = "F11", ["f12"] = "F12"
+    }
+    
+    local lowerStr = string.lower(str)
+    local mapped = map[lowerStr] or str
+    
+    if #mapped == 1 then
+        mapped = string.upper(mapped)
+    end
+    
+    local success, val = pcall(function() return Enum.KeyCode[mapped] end)
+    if success then return val end
+    return nil
+end
+
+local function BindCustomButtonEvents(keyCode, button)
+    button.MouseButton1Down:Connect(function()
+        if editActive then return end
+        simulateKeyPress(keyCode, true)
+        updateButtonVisuals(keyCode, true)
+        simulatedKeys[keyCode] = true
+    end)
+    button.MouseButton1Up:Connect(function()  
+        if editActive then return end
+        simulateKeyPress(keyCode, false)  
+        updateButtonVisuals(keyCode, false)  
+        simulatedKeys[keyCode] = nil  
+    end)  
+    button.MouseLeave:Connect(function()  
+        if editActive then return end
+        if simulatedKeys[keyCode] then  
+            simulateKeyPress(keyCode, false)  
+            updateButtonVisuals(keyCode, false)  
+            simulatedKeys[keyCode] = nil  
+        end  
+    end)  
+    button.MouseEnter:Connect(function()  
+        if editActive then return end
+        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then  
+            simulateKeyPress(keyCode, true)  
+            updateButtonVisuals(keyCode, true)  
+            simulatedKeys[keyCode] = true  
+        end  
+    end)
+end
+
+local function makeDraggable(frame, id, isCustom)
+    local drag = Instance.new("UIDragDetector")
+    drag.Enabled = false
+    drag.BoundingUI = dragBoundary
+    drag.Parent = frame
+    table.insert(draggables, {frame = frame, drag = drag, id = id, isCustom = isCustom})
+end
+
+-- Nova função unificada para criar Elementos Customizados (Teclas, Atalhos, AutoClick)
+local function CreateCustomElement(data)
+    local keyName = data.Name
+    local eType = data.Type or "Key"
+    local position = UDim2.new(unpack(data.Position))
+
+    local kContainer = Instance.new("Frame")
+    kContainer.Name = "Custom_" .. keyName .. "_" .. tostring(tick())
+    kContainer.BackgroundTransparency = 1
+    kContainer.Position = position
+    kContainer.Parent = screenGui
+
+    -- Largura automática dependendo do tamanho do texto
+    local textBounds = TextService:GetTextSize(keyName, 17, Enum.Font.SourceSansBold, Vector2.new(1000, 45))
+    local btnWidth = math.max(45, textBounds.X + 24)
+    kContainer.Size = UDim2.new(0, btnWidth, 0, 45)
+
+    local kImage = Instance.new("ImageLabel")
+    kImage.Size = UDim2.new(1, 0, 1, 0)
+    kImage.BackgroundTransparency = 1
+    kImage.Image = "rbxassetid://123775806555660"
+    kImage.Parent = kContainer
+
+    local kButton = Instance.new("TextButton")
+    kButton.Name = keyName
+    kButton.Text = keyName
+    kButton.Size = UDim2.new(1, 0, 1, 0)
+    kButton.BackgroundTransparency = 1
+    kButton.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    kButton.TextSize = 17
+    kButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    kButton.Parent = kImage
+
+    local customElementData = {
+        frame = kContainer,
+        id = kContainer.Name,
+        isCustom = true,
+        data = data,
+        button = kButton -- Armazena a referência para desativá-la no modo de edição
+    }
+
+    local targetBall = nil
+    if eType == "Tap" then
+        targetBall = Instance.new("Frame")
+        targetBall.Name = "Target_" .. kContainer.Name
+        targetBall.Size = UDim2.new(0, 30, 0, 30)
+        if data.TargetPos then
+            targetBall.Position = UDim2.new(unpack(data.TargetPos))
+        else
+            -- Coloca a bola amarela acima do botão inicialmente usando o Scale e Offset juntos
+            targetBall.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, position.Y.Offset - 60)
+        end
+        targetBall.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+        targetBall.BackgroundTransparency = editActive and 0.5 or 1
+        targetBall.Visible = editActive -- Invisivel completo fora da edição
+        targetBall.Parent = screenGui
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = targetBall
+        
+        local dragBall = Instance.new("UIDragDetector")
+        dragBall.Enabled = editActive
+        dragBall.BoundingUI = dragBoundary
+        dragBall.Parent = targetBall
+        
+        customElementData.targetBall = targetBall
+        customElementData.dragBall = dragBall
+        
+        -- Eventos para Taps / AutoClick
+        local isClicking = false
+        local clickCoro = nil
+        
+        kButton.MouseButton1Down:Connect(function()
+            if editActive then return end
+            kImage.ImageTransparency = 0.5
+            
+            local tAbs = targetBall.AbsolutePosition
+            local tSize = targetBall.AbsoluteSize
+            local cx = tAbs.X + tSize.X / 2
+            local cy = tAbs.Y + tSize.Y / 2
+            
+            if keyName == "AutoClick" then
+                isClicking = not isClicking
+                if isClicking then
+                    kImage:SetAttribute("ActiveAutoClickVisual", true)
+                    kImage.ImageColor3 = Color3.fromRGB(100, 255, 100) -- visual verde
+                    clickCoro = task.spawn(function()
+                        local cps = data.CPS or 10
+                        local delayTime = 1 / cps
+                        while isClicking do
+                            VirtualInputManager:SendMouseButtonEvent(cx, cy, 0, true, game, 1)
+                            task.wait(0.02)
+                            VirtualInputManager:SendMouseButtonEvent(cx, cy, 0, false, game, 1)
+                            task.wait(math.max(0, delayTime - 0.02))
+                        end
+                    end)
+                else
+                    kImage:SetAttribute("ActiveAutoClickVisual", nil)
+                    applyModSettings(currentModSettings) -- Restaura visual padrão
+                    if clickCoro then task.cancel(clickCoro) end
+                end
+            else
+                VirtualInputManager:SendMouseButtonEvent(cx, cy, 0, true, game, 1)
+            end
+        end)
+        
+        kButton.MouseButton1Up:Connect(function()
+            if editActive then return end
+            kImage.ImageTransparency = 0
+            if keyName ~= "AutoClick" then
+                local tAbs = targetBall.AbsolutePosition
+                local tSize = targetBall.AbsoluteSize
+                local cx = tAbs.X + tSize.X / 2
+                local cy = tAbs.Y + tSize.Y / 2
+                VirtualInputManager:SendMouseButtonEvent(cx, cy, 0, false, game, 1)
+            end
+        end)
+        
+        kButton.MouseLeave:Connect(function()
+            if editActive then return end
+            kImage.ImageTransparency = 0
+            if keyName ~= "AutoClick" then
+                local tAbs = targetBall.AbsolutePosition
+                local tSize = targetBall.AbsoluteSize
+                local cx = tAbs.X + tSize.X / 2
+                local cy = tAbs.Y + tSize.Y / 2
+                VirtualInputManager:SendMouseButtonEvent(cx, cy, 0, false, game, 1)
+            end
+        end)
+        
+    else
+        -- Configuração normal para teclado
+        local kc = parseKeyCode(data.KeyCodeStr)
+        if kc then
+            buttonMapping[kc] = kButton
+            BindCustomButtonEvents(kc, kButton)
+        end
+    end
+
+    -- Lógica de arrasto e edição para o botão
+    local dragBtn = Instance.new("UIDragDetector")
+    dragBtn.Enabled = editActive
+    dragBtn.BoundingUI = dragBoundary
+    dragBtn.Parent = kContainer
+    customElementData.drag = dragBtn
+    
+    local lastClick = 0
+    local startPos = Vector3.new()
+    
+    kContainer.InputBegan:Connect(function(input)
+        if editActive and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) then
+            startPos = input.Position
+            local now = tick()
+            if now - lastClick < 0.3 then -- Duplo clique
+                -- Deletar Componente
+                if eType == "Tap" and targetBall then targetBall:Destroy() end
+                if eType == "Key" then
+                    local kc = parseKeyCode(data.KeyCodeStr)
+                    if kc then buttonMapping[kc] = nil end
+                end
+                kContainer:Destroy()
+                for i, v in ipairs(draggables) do
+                    if v.frame == kContainer then
+                        table.remove(draggables, i)
+                        break
+                    end
+                end
+            end
+            lastClick = now
+        end
+    end)
+    
+    kContainer.InputEnded:Connect(function(input)
+        if editActive and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) then
+            if kContainer.Parent then
+                local dist = (input.Position - startPos).Magnitude
+                -- Se não arrastou (apenas clicou soltando o dedo)
+                if dist < 10 and keyName == "AutoClick" and eType == "Tap" then
+                    OpenCPSMenu(customElementData)
+                end
+            end
+        end
+    end)
+
+    table.insert(draggables, customElementData)
+    applyModSettings(currentModSettings)
+    
+    if editActive then
+        kContainer.BackgroundTransparency = 0.5
+        kContainer.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+        kButton.Interactable = false
+        kButton.Active = false
+    end
+    
+    return customElementData
+end
+
+local configPath = "TouchGui/Config.json"
+local PlaceIdStr = tostring(game.PlaceId)
+
+local function ReadConfigFile()
+    if isfile and isfile(configPath) then
+        local s, r = pcall(readfile, configPath)
+        if s then
+            local ds, decoded = pcall(function() return HttpService:JSONDecode(r) end)
+            if ds and type(decoded) == "table" then return decoded end
+        end
+    end
+    return {}
+end
+
+local function SaveData()
+    if isfolder and not isfolder("TouchGui") then pcall(makefolder, "TouchGui") end
+    local allData = ReadConfigFile()
+    local layoutData = { CustomElements = {}, ModSettings = currentModSettings }
+
+    for _, item in ipairs(draggables) do
+        if item.frame and item.frame.Parent then
+            local pos = item.frame.Position
+            local posTable = {pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset}
+            
+            if item.isCustom then
+                local tPosTable = nil
+                if item.targetBall and item.targetBall.Parent then
+                    local tPos = item.targetBall.Position
+                    tPosTable = {tPos.X.Scale, tPos.X.Offset, tPos.Y.Scale, tPos.Y.Offset}
+                    item.data.TargetPos = tPosTable
+                end
+                item.data.Position = posTable
+                table.insert(layoutData.CustomElements, item.data)
+            else
+                layoutData[item.id] = posTable
+            end
+        end
+    end
+
+    allData[PlaceIdStr] = layoutData
+    if writefile then
+        local s, r = pcall(function() return HttpService:JSONEncode(allData) end)
+        if s then pcall(writefile, configPath, r) end
+    end
+end
+
+local function LoadAndApply()
+    for i = #draggables, 1, -1 do
+        local item = draggables[i]
+        if item.isCustom then
+            if item.frame then item.frame:Destroy() end
+            if item.targetBall then item.targetBall:Destroy() end
+            if item.data and item.data.Type == "Key" then
+                local kc = parseKeyCode(item.data.KeyCodeStr)
+                if kc then buttonMapping[kc] = nil end
+            end
+            table.remove(draggables, i)
+        end
+    end
+
+    local allData = ReadConfigFile()
+    local myData = allData[PlaceIdStr]
+
+    if myData then
+        if myData.WASD then wasdContainer.Position = UDim2.new(unpack(myData.WASD)) end
+        if myData.Space then spaceContainer.Position = UDim2.new(unpack(myData.Space)) end
+        if myData.ExtraKeys then 
+            if extraKeysContainer.Parent then
+                extraKeysContainer.Position = UDim2.new(unpack(myData.ExtraKeys)) 
+            end
+        else
+            if extraKeysContainer.Parent then
+                cleanButtonMappings(extraKeysContainer)
+                extraKeysContainer:Destroy()
+            end
+        end
+        
+        if myData.CustomElements then
+            for _, kData in ipairs(myData.CustomElements) do
+                CreateCustomElement(kData)
+            end
+        elseif myData.CustomKeys then -- Compatibilidade com dados antigos
+            for _, k in ipairs(myData.CustomKeys) do
+                CreateCustomElement({
+                    Name = k.Name,
+                    Type = "Key",
+                    KeyCodeStr = k.KeyCode,
+                    Position = k.Position,
+                    CPS = 10
+                })
+            end
+        end
+        
+        if myData.ModSettings then
+            currentModSettings = myData.ModSettings
+        end
+    else
+        wasdContainer.Position = UDim2.new(0, 6, 0, 196)
+        if extraKeysContainer.Parent then extraKeysContainer.Position = UDim2.new(0, 628, 0, 195) end
+        spaceContainer.Position = UDim2.new(0, 588, 0, 222)
+    end
+    
+    applyModSettings(currentModSettings)
+end
+
+local function setDraggablesState(active)
+    for _, item in ipairs(draggables) do
+        if item.frame and item.frame.Parent then
+            if item.drag then item.drag.Enabled = active end
+            if active then
+                item.frame.BackgroundTransparency = 0.5
+                item.frame.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+            else
+                item.frame.BackgroundTransparency = 1
+            end
+            
+            -- Desativa o TextButton temporariamente no modo Edit para deixar o UIDragDetector funcionar no Tap/AutoClick
+            if item.button then
+                item.button.Interactable = not active
+                item.button.Active = not active
+            end
+            
+            if item.targetBall then
+                item.targetBall.BackgroundTransparency = active and 0.5 or 1
+                item.targetBall.Visible = active -- Alterna a visibilidade completa da bolinha amarela
+                if item.dragBall then item.dragBall.Enabled = active end
+            end
+        end
+    end
+    
+    for kc, btn in pairs(buttonMapping) do
+        if btn and btn.Parent then
+            btn.Interactable = not active
+            btn.Active = not active
+        end
+    end
+end
+
+local function toggleEditMode(state)
+    editActive = state
+    if state then resetSimulatedKeys() end
+    
+    UI_EditBtn.Visible = not state
+    UI_EditMenu.Visible = state
+    UI_CreateMenu.Visible = false
+    UI_ModMenu.Visible = false
+    UI_CPSMenu.Visible = false
+    setDraggablesState(state)
+end
+
+UI_EditBtn.MouseButton1Click:Connect(function()
+    toggleEditMode(true)
+end)
+
+UI_CancelBtn.MouseButton1Click:Connect(function()
+    toggleEditMode(false)
+    LoadAndApply()
+end)
+
+UI_SaveBtn.MouseButton1Click:Connect(function()
+    SaveData()
+    toggleEditMode(false)
+end)
+
+UI_NewBtn.MouseButton1Click:Connect(function()
+    UI_EditMenu.Visible = false
+    setDraggablesState(false)
+    UI_CreateMenu.Visible = true
+end)
+
+UI_CreateCancelBtn.MouseButton1Click:Connect(function()
+    UI_CreateMenu.Visible = false
+    UI_EditMenu.Visible = true
+    setDraggablesState(true)
+end)
+
+UI_CreateNewBtn.MouseButton1Click:Connect(function()
+    local keyName = UI_KeyNameInput.Text
+    if keyName ~= "" then
+        local btnData = {
+            Name = keyName,
+            Type = currentCreateMode,
+            KeyCodeStr = keyName,
+            Position = {0.5, -22, 0.3, 0},
+            CPS = 10
+        }
+        
+        local customEl = CreateCustomElement(btnData)
+        if customEl then
+            UI_KeyNameInput.Text = "OK!"
+            task.wait(0.5)
+            UI_KeyNameInput.Text = ""
+            UI_CreateMenu.Visible = false
+            UI_EditMenu.Visible = true
+            setDraggablesState(true)
+        else
+            UI_KeyNameInput.Text = "Erro"
+            task.wait(1)
+            UI_KeyNameInput.Text = keyName
+        end
+    end
+end)
+
+-- MOD MENU LOGIC
+local tempModSettings = {BgMode = "White", TextHex = "#000000", Rainbow = false}
+
+UI_ModBtn.MouseButton1Click:Connect(function()
+    UI_EditMenu.Visible = false
+    UI_ModMenu.Visible = true
+    
+    tempModSettings.BgMode = currentModSettings.BgMode
+    tempModSettings.TextHex = currentModSettings.TextHex
+    tempModSettings.Rainbow = currentModSettings.Rainbow
+    
+    UI_BgBtn.Text = "BG: " .. tempModSettings.BgMode
+    UI_HexInput.Text = tempModSettings.TextHex
+    UI_RainbowBtn.Text = "Rainbow Text: " .. (tempModSettings.Rainbow and "ON" or "OFF")
+end)
+
+UI_BgBtn.MouseButton1Click:Connect(function()
+    tempModSettings.BgMode = tempModSettings.BgMode == "White" and "Black" or "White"
+    UI_BgBtn.Text = "BG: " .. tempModSettings.BgMode
+    applyModSettings(tempModSettings)
+end)
+
+UI_HexInput.FocusLost:Connect(function()
+    tempModSettings.TextHex = UI_HexInput.Text
+    applyModSettings(tempModSettings)
+end)
+
+UI_RainbowBtn.MouseButton1Click:Connect(function()
+    tempModSettings.Rainbow = not tempModSettings.Rainbow
+    UI_RainbowBtn.Text = "Rainbow Text: " .. (tempModSettings.Rainbow and "ON" or "OFF")
+    applyModSettings(tempModSettings)
+end)
+
+UI_ModCancelBtn.MouseButton1Click:Connect(function()
+    applyModSettings(currentModSettings) -- Reverte aos atuais
+    UI_ModMenu.Visible = false
+    UI_EditMenu.Visible = true
+end)
+
+UI_ModSaveBtn.MouseButton1Click:Connect(function()
+    currentModSettings.BgMode = tempModSettings.BgMode
+    currentModSettings.TextHex = tempModSettings.TextHex
+    currentModSettings.Rainbow = tempModSettings.Rainbow
+    
+    applyModSettings(currentModSettings)
+    SaveData()
+    
+    UI_ModMenu.Visible = false
+    UI_EditMenu.Visible = true
+end)
+
+makeDraggable(wasdContainer, "WASD", false)
+makeDraggable(extraKeysContainer, "ExtraKeys", false)
+makeDraggable(spaceContainer, "Space", false)
+
+-- Carregar após declarar todos os elementos de UI
+LoadAndApply()
