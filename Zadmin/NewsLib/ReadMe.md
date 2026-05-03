@@ -55,12 +55,59 @@ The library is designed to work out of the box, but you can control behavior usi
 | Id         | string | Identifier |
 ---
 
-🔊 Default Sound
+🔊 Sound Configuration
 
-If no sound is provided, the library uses:
+You now have full control over notification sounds.
 
-`137402801272072`
+Parameters
 
+Property| Type| Default| Description
+"Sound"| boolean| "true"| Enable or disable sound
+"SoundId"| string| ""137402801272072""| Custom sound asset ID
+
+---
+
+Usage Examples
+
+News:New({
+    Text = "Default sound",
+    Sound = true
+})
+
+News:New({
+    Text = "Custom sound",
+    Sound = true,
+    SoundId = "123456789"
+})
+
+News:New({
+    Text = "Silent notification",
+    Sound = false
+})
+
+---
+
+Behavior
+
+- Every notification always plays its own sound, including queued ones
+- If "Sound = false", no sound will be played
+- If "SoundId" is not provided, the default sound is used
+
+---
+
+🖼️ Icon Behavior Fix
+
+- Notification icons now preserve correct proportions
+- No more stretched or squashed images
+- Uses fixed aspect ratio to maintain visual consistency
+
+---
+
+♻️ Re-Execution Safety
+
+- The library now detects existing UI instances
+- Prevents duplicated interfaces when executed multiple times
+- Ensures notifications stack correctly without overlapping
 ---
 
 📚 Queue System
