@@ -23,7 +23,7 @@ It keeps your original UI style intact while adding queue control, smooth animat
 
 Upload your script somewhere accessible (GitHub, Pastebin, etc.) and load it using:
 ```luau
-local News = loadstring(game:HttpGet("YOUR_URL_HERE"))()
+local News = loadstring(game:HttpGet("https://raw.githubusercontent.com/higuysdorobloxjoaopk-maker/BestScriptsLuay/refs/heads/main/Zadmin/NewsLib/Source.lua"))()
 ```
 ---
 
@@ -121,7 +121,7 @@ News:Notifications({
 
 📌 Example
 ```luau
-local News = loadstring(game:HttpGet("YOUR_URL_HERE"))()
+local News = loadstring(game:HttpGet("https://raw.githubusercontent.com/higuysdorobloxjoaopk-maker/BestScriptsLuay/refs/heads/main/Zadmin/NewsLib/Source.lua"))()
 
 News:New({
     Text = "Welcome!",
@@ -156,5 +156,3 @@ Free to use and modify. Attribution is optional but appreciated.
 👤 Author
 
 Made for performance, simplicity, and control.
-
----
