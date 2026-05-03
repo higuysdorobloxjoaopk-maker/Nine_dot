@@ -61,30 +61,32 @@ You now have full control over notification sounds.
 
 Parameters
 
-Property| Type| Default| Description
-"Sound"| boolean| "true"| Enable or disable sound
-"SoundId"| string| ""137402801272072""| Custom sound asset ID
-
+| Property  | Type    | Default             | Description                   |
+|-----------|---------|---------------------|-------------------------------|
+| Sound     | boolean | true                | Enable or disable sound       |
+| SoundId   | string  | "137402801272072"   | Custom sound asset ID         |
 ---
 
 Usage Examples
-
+```luau
 News:New({
     Text = "Default sound",
     Sound = true
 })
-
+```
+```luau
 News:New({
     Text = "Custom sound",
     Sound = true,
     SoundId = "123456789"
 })
-
+```
+```luau
 News:New({
     Text = "Silent notification",
     Sound = false
 })
-
+```
 ---
 
 Behavior
