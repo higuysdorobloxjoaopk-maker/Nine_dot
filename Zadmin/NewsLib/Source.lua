@@ -1,4 +1,4 @@
--- Notification Lib
+-- Notification Lib (V4 commit by joaopk errors: flattened icon, When restarted, notifications are stacked on top of each other.)
 
 local NotificationLib = {}
 local queue = {}
@@ -14,13 +14,23 @@ local player = Players.LocalPlayer
 local gui = nil
 local container = nil
 
+-- evitar duplicação
 local function createUI()
+    local existing = player:WaitForChild("PlayerGui"):FindFirstChild("ScreenGui")
+    if existing then
+        gui = existing
+        container = gui:FindFirstChild("NotFrame")
+        return
+    end
+
     local LMG2L = {}
 
     LMG2L["ScreenGui_1"] = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+    LMG2L["ScreenGui_1"].Name = "ScreenGui"
     LMG2L["ScreenGui_1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
     LMG2L["NotFrame_2"] = Instance.new("Frame", LMG2L["ScreenGui_1"])
+    LMG2L["NotFrame_2"].Name = "NotFrame"
     LMG2L["NotFrame_2"].BorderSizePixel = 0
     LMG2L["NotFrame_2"].BackgroundTransparency = 1
     LMG2L["NotFrame_2"].Size = UDim2.new(0, 348, 0, 230)
@@ -44,14 +54,12 @@ end
 
 local function createNotification(data)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 336, 0, 56)
+    frame.Size = UDim2.new(0, 0, 0, 56)
     frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
     frame.BackgroundTransparency = 0.3
     frame.BorderSizePixel = 0
-    frame.Parent = container
-
     frame.ClipsDescendants = true
-    frame.Size = UDim2.new(0, 0, 0, 56)
+    frame.Parent = container
 
     local icon = Instance.new("ImageLabel", frame)
     icon.Image = "rbxasset://textures/ui/Emotes/ErrorIcon.png"
@@ -59,6 +67,9 @@ local function createNotification(data)
     icon.Position = UDim2.new(0, 10, 0.5, 0)
     icon.AnchorPoint = Vector2.new(0, 0.5)
     icon.BackgroundTransparency = 1
+
+    local aspect = Instance.new("UIAspectRatioConstraint", icon)
+    aspect.AspectRatio = 1
 
     local text = Instance.new("TextLabel", frame)
     text.Text = data.Text or "..."
@@ -77,12 +88,15 @@ local function createNotification(data)
     button.BackgroundTransparency = 1
     button.Text = ""
 
+    -- animação entrada
     TweenService:Create(frame, TweenInfo.new(0.3), {
         Size = UDim2.new(0,336,0,56)
     }):Play()
-  
+
+    -- som
     if data.Sound ~= false then
-        playSound(data.Sound or "137402801272072")
+        local id = data.SoundId or "137402801272072"
+        playSound(id)
     end
 
     local function remove()
@@ -95,8 +109,8 @@ local function createNotification(data)
         active[data.Id] = nil
 
         if #queue > 0 then
-            local next = table.remove(queue,1)
-            NotificationLib:New(next)
+            local nextData = table.remove(queue,1)
+            NotificationLib:New(nextData)
         end
     end
 
@@ -119,7 +133,14 @@ function NotificationLib:New(data)
 
     data.Id = data.Id or tostring(math.random(1000,9999))
 
-    if #container:GetChildren() - 1 >= maxNotifications then
+    local currentCount = 0
+    for _,v in pairs(container:GetChildren()) do
+        if v:IsA("Frame") then
+            currentCount += 1
+        end
+    end
+
+    if currentCount >= maxNotifications then
         table.insert(queue, data)
         return
     end
@@ -131,7 +152,7 @@ function NotificationLib:MinimizeNotifications(cfg)
     local ids = cfg.Notifications
 
     for id,frame in pairs(active) do
-        if ids == "All" or table.find(ids, id) then
+        if ids == "All" or (typeof(ids) == "table" and table.find(ids, id)) then
             TweenService:Create(frame, TweenInfo.new(0.25), {
                 Size = UDim2.new(0,0,0,56)
             }):Play()
