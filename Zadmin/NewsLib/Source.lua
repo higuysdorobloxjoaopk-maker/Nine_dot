@@ -1,5 +1,22 @@
--- Notification Lib (V4 commit by joaopk errors: flattened icon, When restarted, notifications are stacked on top of each other.)
+--[[
+=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~~=~=~=
+=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~~=~=~=
+██╗     ██╗   ██╗ █████╗ ██╗   ██╗   | contributors & owners/creators
+██║     ██║   ██║██╔══██╗╚██╗ ██╔╝  | - higuysdorobloxjoaopk -=-  owner(creator)
+██║     ██║   ██║███████║ ╚████╔╝   | -
+██║     ██║   ██║██╔══██║  ╚██╔╝    | -
+███████╗╚██████╔╝██║  ██║   ██║    | -
+╚══════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝    | -
+=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~~=~=~=
+=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~~=~=~=
+commit by higuysdorobloxjoaopk :>
+bugs fixed;
+- reset on spawn - false
+- duplicate ui one on top of the other
 
+Thank you so much for supporting and using our library :>
+I do this as a hobby, not for work or obligation, but I still give it my best. I hope you enjoy it.
+]]
 local NotificationLib = {}
 local queue = {}
 local active = {}
@@ -14,20 +31,30 @@ local player = Players.LocalPlayer
 local gui = nil
 local container = nil
 
--- evitar duplicação
 local function createUI()
-    local existing = player:WaitForChild("PlayerGui"):FindFirstChild("ScreenGui")
+    local pg = player:WaitForChild("PlayerGui")
+    local existing = pg:FindFirstChild("NotificationLibGui")
+
     if existing then
         gui = existing
         container = gui:FindFirstChild("NotFrame")
+        if container then
+            for _,v in ipairs(container:GetChildren()) do
+                if v:IsA("Frame") then
+                    v:Destroy()
+                end
+            end
+        end
+        active = {}
         return
     end
 
     local LMG2L = {}
 
-    LMG2L["ScreenGui_1"] = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-    LMG2L["ScreenGui_1"].Name = "ScreenGui"
+    LMG2L["ScreenGui_1"] = Instance.new("ScreenGui", pg)
+    LMG2L["ScreenGui_1"].Name = "NotificationLibGui"
     LMG2L["ScreenGui_1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    LMG2L["ScreenGui_1"].ResetOnSpawn = false
 
     LMG2L["NotFrame_2"] = Instance.new("Frame", LMG2L["ScreenGui_1"])
     LMG2L["NotFrame_2"].Name = "NotFrame"
@@ -88,12 +115,10 @@ local function createNotification(data)
     button.BackgroundTransparency = 1
     button.Text = ""
 
-    -- animação entrada
     TweenService:Create(frame, TweenInfo.new(0.3), {
         Size = UDim2.new(0,336,0,56)
     }):Play()
 
-    -- som
     if data.Sound ~= false then
         local id = data.SoundId or "137402801272072"
         playSound(id)
