@@ -1,57 +1,55 @@
-# Notification Library (Roblox Lua)
+# news libray(notifications)
 
-A lightweight, clean notification system built for Roblox.
-It keeps your original UI style intact while adding queue control, smooth animations, and flexible APIs.
+- creator higuysdorobloxjoaopk's
+- email [luayrbx@gmail.com](luayrbx@gmail.com)
+- ServerDiscord ~ [LuayDiscord](https://discord.gg/MwJGfBSXc9)
+---
+
+### advantages & features
+
+- | Clean and clear system
+- | Simple to use and understand
+- | Frequent updates
+- | Editable
+- | Briefly smooth
 
 ---
 
-✨ Features
+### Installation
 
-- ✔️ Clean and minimal notification design (based on your original UI)
-- ✔️ Queue system (max 3 notifications on screen)
-- ✔️ Smooth open/close animations
-- ✔️ Click to dismiss
-- ✔️ Optional lifetime (auto-remove)
-- ✔️ Sound support (custom or default)
-- ✔️ Notification control by ID
-- ✔️ Enable / disable system globally
-- ✔️ Minimize specific or all notifications
-
----
-
-📦 Installation
-
-Upload your script somewhere accessible (GitHub, Pastebin, etc.) and load it using:
+First, call the library using loadstring;
 ```luau
 local News = loadstring(game:HttpGet("https://raw.githubusercontent.com/higuysdorobloxjoaopk-maker/BestScriptsLuay/refs/heads/main/Zadmin/NewsLib/Source.lua"))()
 ```
 ---
 
-🚀 Usage
+### How to use
 
 Create a Notification
 ```luau
 News:New({
     Text = "Error while loading",
-    Icon = "Default", -- (currently visual is fixed, reserved for future)
-    Sound = "Default", -- or use a custom sound ID
-    LifeTime = 5, -- seconds (optional)
-    Id = "1" -- unique identifier (optional but recommended)
+    Icon = "Default",
+    SoundId = "Default", -- or use a custom sound ID
+    Sound = true
+    LifeTime = 5,
+    Id = "1" -- unique identifier
 })
 ```
 ---
 
-⚙️ Configuration
+### Configuration
 The library is designed to work out of the box, but you can control behavior using the available methods and parameters.
 ---
 
-🧾 Parameters
+### Parameters
 
 | Property   | Type    | Description |
 |------------|--------|------------|
 | Text       | string | Message displayed |
-| Sound      | string | Sound ID |
+| SoundId    | string | Sound ID |
 | LifeTime   | number | Duration in seconds |
+| Sound      | true/false | whether the sound will play when the notification appears
 | Id         | string | Identifier |
 ---
 
@@ -89,7 +87,7 @@ News:New({
 ```
 ---
 
-Behavior
+### Behavior
 
 - Every notification always plays its own sound, including queued ones
 - If "Sound = false", no sound will be played
@@ -97,7 +95,7 @@ Behavior
 
 ---
 
-🖼️ Icon Behavior Fix
+### Icon Behavior Fix
 
 - Notification icons now preserve correct proportions
 - No more stretched or squashed images
@@ -105,29 +103,21 @@ Behavior
 
 ---
 
-♻️ Re-Execution Safety
+### Re-Execution Safety
 
 - The library now detects existing UI instances
 - Prevents duplicated interfaces when executed multiple times
 - Ensures notifications stack correctly without overlapping
 ---
 
-📚 Queue System
-
-- Maximum 3 notifications visible at the same time
-- Extra notifications are automatically queued
-- When one closes, the next one appears
-
----
-
-🖱️ Interaction
+### Interaction
 
 - Click any notification to dismiss it instantly
 - Smooth closing animation included
 
 ---
 
-🧩 Control Functions
+### Control Functions
 
 Minimize Notifications
 
@@ -157,18 +147,10 @@ News:Notifications({
     Notifications = true -- enables again
 })
 ```
----
-
-🧠 Notes
-
-- IDs are optional but strongly recommended if you want control
-- The system will still work without IDs (auto-generated internally)
-- UI structure is preserved from the original design
-- Built to be simple and easy to integrate into any script
 
 ---
 
-📌 Example
+### Example
 ```luau
 local News = loadstring(game:HttpGet("https://raw.githubusercontent.com/higuysdorobloxjoaopk-maker/BestScriptsLuay/refs/heads/main/Zadmin/NewsLib/Source.lua"))()
 
@@ -185,23 +167,7 @@ News:New({
     Id = "error"
 })
 ```
----
-
-🛠️ Future Improvements (optional ideas)
-
-- Custom icons
-- Notification types (success, warning, error)
-- Position control (top/bottom)
-- Progress bar for lifetime
 
 ---
 
-📄 License
-
-Free to use and modify. Attribution is optional but appreciated.
-
----
-
-👤 Author
-
-Made for performance, simplicity, and control.
+Hey, the creator of this library really wants to keep creating, but it's not easy, much less quick, to do so. There are many bugs on top of each other. If you could help by sharing and giving a star, please let me know.<img width="507" height="492" alt="f49a8b111c6bcf86be6b503dd7b1e748-removebg-preview" src="https://github.com/user-attachments/assets/a9ffadc4-3e2b-4dea-8e6d-7b1dda524b31" />
