@@ -1,0 +1,19 @@
+local Shaders = true
+local Name = "Purple Sky's"
+local PlayersReflectance = true
+local MapReflectance = true
+local rainssun = false
+
+local ClockTime = 14
+local Brightness = 3.135
+local Reflectance = 0.3
+
+local Moon = "rbxasset://sky/moon.jpg"
+local Sun = "rbxasset://0"
+
+local SkyBk = "http://www.roblox.com/asset/?id=16553658937"
+local SkyDn = "http://www.roblox.com/asset/?id=16553660713"
+local SkyFt = "http://www.roblox.com/asset/?id=16553662144"
+local SkyLf = "http://www.roblox.com/asset/?id=16553664042"
+local SkyRt = "http://www.roblox.com/asset/?id=16553665766"
+local SkyUp = "http://www.roblox.com/asset/?id=16553667750"
