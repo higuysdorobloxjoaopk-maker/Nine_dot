@@ -1,5 +1,6 @@
 local Shaders = true
 local Name = "Purple Sky's"
+local Id = "&pss"
 local PlayersReflectance = true
 local MapReflectance = true
 local rainssun = false
